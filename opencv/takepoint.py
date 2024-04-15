@@ -53,21 +53,18 @@ def write_xy(videopath, filename):
 
     if len(frame_landmarks_list) < 13:  # Check the length of landmark_list before writing
         print(videopath+" is not enough data")
+        
 
     elif len(frame_landmarks_list) > 30:
         print(videopath+" is too much data")
+        
 
     elif len(frame_landmarks_list) > 21 and len(frame_landmarks_list) <= 30:
         while len(frame_landmarks_list) > 21:
             frame_landmarks_list.pop()
             if len(frame_landmarks_list) > 21:
                 frame_landmarks_list.pop(0)
-        flat_frame_landmarks_list = sum(frame_landmarks_list, [])
-        if "up" in videopath:
-            flat_frame_landmarks_list.extend(['1', '0', '0'])
-        if "down" in videopath:
-            flat_frame_landmarks_list.extend(["0", "1", "0"])
-        filename.writerow(flat_frame_landmarks_list)
+
 
     elif len(frame_landmarks_list) < 21 and len(frame_landmarks_list) >= 13:
         while len(frame_landmarks_list) < 21:
@@ -78,17 +75,15 @@ def write_xy(videopath, filename):
                 for x, y in zip(first_frame, second_frame)
             ]
             frame_landmarks_list.insert(1, average_frame)
-        flat_frame_landmarks_list = sum(frame_landmarks_list, [])
-        if "up" in os.path.basename(videopath):
-            flat_frame_landmarks_list.extend(['1', '0', '0'])
-        if "down" in os.path.basename(videopath):
-            flat_frame_landmarks_list.extend(["0", "1", "0"])
-        filename.writerow(flat_frame_landmarks_list)
+
     elif len(frame_landmarks_list) == 21:
+        pass
+
+    if  13 < len(frame_landmarks_list) and len(frame_landmarks_list) < 30:
         flat_frame_landmarks_list = sum(frame_landmarks_list, [])
-        if "up" in os.path.basename(videopath):
+        if "up" in videopath:
             flat_frame_landmarks_list.extend(['1', '0', '0'])
-        if "down" in os.path.basename(videopath):
+        if "down" in videopath:
             flat_frame_landmarks_list.extend(["0", "1", "0"])
         filename.writerow(flat_frame_landmarks_list)
     # flat_frame_landmarks_list = [
