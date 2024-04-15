@@ -10,21 +10,18 @@ def write_data_csv(main_dir, d_dir):
     video_main_file = os.listdir(main_dir)
     data_count = 0
     file_count = 1  
-    datatext = open(
-        d_dir + str(file_count) + ".csv", "a", newline="")
-    filewriter = csv.writer(datatext)
     for categorys in video_main_file:
         file_path = os.path.join(main_dir, categorys)
         list_of_gesture_video = os.listdir(file_path)
         for file in list_of_gesture_video:
             # 迴圈讀取資料夾中影片
             data_count += 1
-            write_xy(file_path + "//" + file, filewriter)
+            with open(d_dir + str(file_count) + ".csv", "a", newline="") as datatext:
+                filewriter = csv.writer(datatext)
+                write_xy(file_path + "//" + file, filewriter)
             if data_count >= 6400:
                 datatext.close()
                 file_count += 1
-                datatext = open(d_dir + str(file_count) + ".csv","w",newline="",)
-                filewriter = csv.writer(datatext)
                 data_count = 0
     print("all write finish!")
 
@@ -103,12 +100,17 @@ def write_xy(videopath, filename):
     cv2.destroyAllWindows()
     return 0
 
+
+
+
+
+
+
+    
 if __name__ == "__main__":
+
     main_dir = "opencv//video"
     s_dir = "opencv"
-    write_data_csv(main_dir, s_dir)
-    # datatext = open(
-    #     s_dir + str(1) + ".csv", "w", newline="")
-    # filewriter = csv.writer(datatext)
-    # write_xy("opencv//video//up//from_video1_standard_0.mp4", filewriter)
+    # write_data_csv(main_dir, s_dir)
+
     print("all finish")
