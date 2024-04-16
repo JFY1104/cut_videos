@@ -64,8 +64,6 @@ def write_xy(videopath, filename):
             frame_landmarks_list.pop()
             if len(frame_landmarks_list) > 21:
                 frame_landmarks_list.pop(0)
-
-
     elif len(frame_landmarks_list) < 21 and len(frame_landmarks_list) >= 13:
         while len(frame_landmarks_list) < 21:
             first_frame = frame_landmarks_list[0]
@@ -141,7 +139,7 @@ def write_shiftxy(file_name, list1, list2,d_dir):
                 print(file_name+":is not enough data"+str(start))
 
             elif len(frame_landmarks_list) > 30:
-                print(file_name + ":is not enough data" + str(start))
+                print(file_name + ":is too big data" + str(start))
 
             elif len(frame_landmarks_list) > 21 and len(frame_landmarks_list) <= 30:
                 while len(frame_landmarks_list) > 21:
@@ -149,7 +147,7 @@ def write_shiftxy(file_name, list1, list2,d_dir):
                     if len(frame_landmarks_list) > 21:
                         frame_landmarks_list.pop(0)
                 flat_frame_landmarks_list = sum(frame_landmarks_list, [])
-                flat_frame_landmarks_list.extend(['0', '0', '1'])
+                flat_frame_landmarks_list.extend(['1', '0', '0'])
                 filewriter.writerow(flat_frame_landmarks_list)
 
             elif len(frame_landmarks_list) < 21 and len(frame_landmarks_list) >= 13:
@@ -162,21 +160,78 @@ def write_shiftxy(file_name, list1, list2,d_dir):
                     ]
                     frame_landmarks_list.insert(1, average_frame)
                 flat_frame_landmarks_list = sum(frame_landmarks_list, [])
-                flat_frame_landmarks_list.extend(["0", "0", "1"])
+                flat_frame_landmarks_list.extend(["1", "0", "0"])
                 filewriter.writerow(flat_frame_landmarks_list)
             elif len(frame_landmarks_list) == 21:
                 flat_frame_landmarks_list = sum(frame_landmarks_list, [])
-                flat_frame_landmarks_list.extend(["0", "0", "1"])
+                flat_frame_landmarks_list.extend(["1", "0", "0"])
                 filewriter.writerow(flat_frame_landmarks_list)
 
     cap.release()
     cv2.destroyAllWindows()
 
 
-if __name__ == "__main__":
+def write_abnormal_data_csv(main_dir, d_dir):
+    video_main_file = os.listdir(main_dir)
+    data_count = 0
+    file_count = 2
+    for categorys in video_main_file:
+        file_path = os.path.join(main_dir, categorys)
+        list_of_gesture_video = os.listdir(file_path)
+        for file in list_of_gesture_video:
+            # 迴圈讀取資料夾中影片
+            data_count += 1
+            with open(d_dir + str(file_count) + ".csv", "a", newline="") as datatext:
+                filewriter = csv.writer(datatext)
+                write_abnormal_data(file_path + "//" + file, filewriter)
+            if data_count >= 6400:
+                datatext.close()
+                file_count += 1
+                data_count = 0
+    print("all write finish!")
 
-    main_dir = "opencv//video"
+
+def write_abnormal_data(videopath, filewriter):
+    cap = cv2.VideoCapture(videopath)
+    mphands = mpsh
+    hands = mphands.Hands()
+    frame_landmarks_list = []
+
+    while cap.isOpened():
+        ret, frame = cap.read()
+        if ret != False:
+            imgRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            result = hands.process(imgRGB)
+            if result.multi_hand_landmarks:
+                landmark_list = []
+                for hand in result.multi_hand_landmarks:
+                    for landmarks in hand.landmark:
+                        x = format(landmarks.x, ".10f")
+                        y = format(landmarks.y, ".10f")
+                        landmark_list.append(x)
+                        landmark_list.append(y)
+                    break
+                frame_landmarks_list.append(landmark_list)
+                if len(frame_landmarks_list) == 21:
+                    # 寫入 CSV
+                    flat_frame_landmarks_list = sum(frame_landmarks_list, [])
+                    flat_frame_landmarks_list.extend(["0", "0", "1"])
+                    filewriter.writerow(flat_frame_landmarks_list)
+                    # 將起始幀向前移動一個位置
+                    frame_landmarks_list.pop(0)
+                    frame_landmarks_list.pop(0)
+                    frame_landmarks_list.pop(0)
+                    frame_landmarks_list.pop(0)
+        else:
+            break
+
+    cap.release()
+
+
+if __name__ == "__main__":
+    main_dir = "opencv//video2"
     s_dir = "opencv"
     # write_data_csv(main_dir, s_dir)
-    write_shift_csv("new _copy.csv", "opencv1.csv")
+    # write_shift_csv("up.csv", "opencv1.csv")
+    write_abnormal_data_csv(main_dir, s_dir)
     print("all finish")
