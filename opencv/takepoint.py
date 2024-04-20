@@ -3,13 +3,24 @@ import cv2
 import pandas as pd
 import mediapipe as mp
 import csv
+import numpy as np
 import mediapipe.python.solutions.hands as mpsh
+
+
+def shift_frame(frame, dx, dy):
+    # 創建轉換矩陣
+    M = np.float32([[1, 0, dx], [0, 1, dy]])
+
+    # 進行平移操作
+    shifted = cv2.warpAffine(frame, M, (frame.shape[1], frame.shape[0]))
+
+    return shifted
 
 
 def write_data_csv(main_dir, d_dir):
     video_main_file = os.listdir(main_dir)
     data_count = 0
-    file_count = 1  
+    file_count = 3
     for categorys in video_main_file:
         file_path = os.path.join(main_dir, categorys)
         list_of_gesture_video = os.listdir(file_path)
@@ -34,6 +45,7 @@ def write_xy(videopath, filename):
     while cap.isOpened():
         ret, frame = cap.read()
         if ret != False:
+            frame = shift_frame(frame, 100, 0)
             imgRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             result = hands.process(imgRGB)
             if result.multi_hand_landmarks:
@@ -53,11 +65,9 @@ def write_xy(videopath, filename):
 
     if len(frame_landmarks_list) < 13:  # Check the length of landmark_list before writing
         print(videopath+" is not enough data")
-        
 
     elif len(frame_landmarks_list) > 30:
         print(videopath+" is too much data")
-        
 
     elif len(frame_landmarks_list) > 21 and len(frame_landmarks_list) <= 30:
         while len(frame_landmarks_list) > 21:
@@ -94,7 +104,7 @@ def write_xy(videopath, filename):
     return 0
 
 
-def write_shift_csv(main_csv, d_dir):
+def write_shift_csv(main_csv, d_dir,bit):
     with open(main_csv, 'r') as file:
         reader = csv.reader(file)
         rows = list(reader)
@@ -103,10 +113,11 @@ def write_shift_csv(main_csv, d_dir):
                 file_name = rows[i][0] 
                 list1 = [int(j) for j in rows[i+1] if j.isdigit()]  
                 list2 = [int(j) for j in rows[i+2] if j.isdigit()]  
-                write_shiftxy(file_name,list1,list2, d_dir)
+                write_shiftxy(file_name,list1,list2, d_dir,bit)
+    print("all finish")
 
 
-def write_shiftxy(file_name, list1, list2,d_dir):
+def write_shiftxy(file_name, list1, list2,d_dir,bit):
     file_path = os.path.join("opencv//already_data",file_name)
     cap = cv2.VideoCapture(file_path)
     mphands = mpsh
@@ -119,6 +130,7 @@ def write_shiftxy(file_name, list1, list2,d_dir):
             for i in range(start, end):
                 ret, frame = cap.read()
                 if ret :
+                    frame = shift_frame(frame, bit, 0)
                     imgRGB = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                     result = hands.process(imgRGB)
                     if result.multi_hand_landmarks:
@@ -147,7 +159,7 @@ def write_shiftxy(file_name, list1, list2,d_dir):
                     if len(frame_landmarks_list) > 21:
                         frame_landmarks_list.pop(0)
                 flat_frame_landmarks_list = sum(frame_landmarks_list, [])
-                flat_frame_landmarks_list.extend(['1', '0', '0'])
+                flat_frame_landmarks_list.extend(['0', '1', '0'])
                 filewriter.writerow(flat_frame_landmarks_list)
 
             elif len(frame_landmarks_list) < 21 and len(frame_landmarks_list) >= 13:
@@ -160,13 +172,13 @@ def write_shiftxy(file_name, list1, list2,d_dir):
                     ]
                     frame_landmarks_list.insert(1, average_frame)
                 flat_frame_landmarks_list = sum(frame_landmarks_list, [])
-                flat_frame_landmarks_list.extend(["1", "0", "0"])
+                flat_frame_landmarks_list.extend(["0", "1", "0"])
                 filewriter.writerow(flat_frame_landmarks_list)
             elif len(frame_landmarks_list) == 21:
                 flat_frame_landmarks_list = sum(frame_landmarks_list, [])
-                flat_frame_landmarks_list.extend(["1", "0", "0"])
+                flat_frame_landmarks_list.extend(["0", "1", "0"])
                 filewriter.writerow(flat_frame_landmarks_list)
-
+    print(file_path + " finish")
     cap.release()
     cv2.destroyAllWindows()
 
@@ -229,9 +241,12 @@ def write_abnormal_data(videopath, filewriter):
 
 
 if __name__ == "__main__":
-    main_dir = "opencv//video2"
+    main_dir = "opencv//video"
     s_dir = "opencv"
     # write_data_csv(main_dir, s_dir)
-    # write_shift_csv("up.csv", "opencv1.csv")
-    write_abnormal_data_csv(main_dir, s_dir)
+    # write_shift_csv("upforward4.csv", "opencv3.csv", 50)
+    # write_shift_csv("upbackward4.csv", "opencv3.csv", 100)
+    write_shift_csv("downforward4.csv", "opencv3.csv", 50)
+    write_shift_csv("downbackward4.csv", "opencv3.csv", 100)
+    # write_abnormal_data_csv(main_dir, s_dir)
     print("all finish")
